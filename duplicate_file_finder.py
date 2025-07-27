@@ -69,5 +69,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    dupes = find_duplicates(args.directory, use_hash=args.use_hash)
-    print_duplicates(dupes)
+    dupes = findDupes(args.directory, use_hash=args.use_hash)
+    giveDupes(dupes)
