@@ -1,6 +1,7 @@
 import os
 import sys
 import subprocess
+import argparse
 
 def runFzf(files):
     if not files:
@@ -10,14 +11,14 @@ def runFzf(files):
         out = subprocess.run(['fzf', '-m'], input="\n".join(files), text=True, capture_output=True, check=True)
         return [f for f in out.stdout.strip().split('\n') if f]
     except FileNotFoundError:
-        sys.exit(1)
+        sys.exit("fzf not found. Please install it first.")
     except subprocess.CalledProcessError:
         print("No files selected or aborted.")
     return []
 
 def getFiles(path='.'):
     try:
-        return [f for f in os.listdir(path) if os.path.isfile(f)]
+        return [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
     except Exception as e:
         print(f"Error: {e}")
         return []
@@ -72,7 +73,13 @@ def confirmAndRename(renames):
         print("Cancelled.")
 
 def main():
-    files = getFiles()
+    parser = argparse.ArgumentParser(description="Fuzzy-based File Renamer")
+    parser.add_argument("mode", nargs="?", help="interactive or pattern")
+    parser.add_argument("directory", nargs="?", default=".", help="Target directory (default: current)")
+    args = parser.parse_args()
+
+    path = args.directory
+    files = getFiles(path)
     if not files:
         print("No files found.")
         return
@@ -86,11 +93,15 @@ def main():
     for f in selected:
         print("-", f)
 
-    mode = ''
-    while mode not in ['interactive', 'pattern', 'cancel']:
-        mode = input("\nMode? (interactive/pattern/cancel): ").strip().lower()
-    if mode == 'cancel':
-        print("Cancelled.")
+    mode = args.mode
+    if not mode:
+        while mode not in ['interactive', 'pattern', 'cancel']:
+            mode = input("\nMode? (interactive/pattern/cancel): ").strip().lower()
+        if mode == 'cancel':
+            print("Cancelled.")
+            return
+    elif mode not in ['interactive', 'pattern']:
+        print("Invalid mode. Choose 'interactive' or 'pattern'.")
         return
 
     renames = interactiveRename(selected) if mode == 'interactive' else patternRename(selected)
