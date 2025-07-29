@@ -1,30 +1,43 @@
 import os
 import argparse
 
-def delete_empty_folders(root):
-    deleted = []
-    for dirpath, dirnames, filenames in os.walk(root, topdown=False):
-        for dirname in dirnames:
-            full_path = os.path.join(dirpath, dirname)
-            if not os.listdir(full_path):
-                deleted.append(full_path)
-    if not deleted:
+def deleteEmptyFolders(rootDir):
+    emptyFolders = []
+    for dirPath, dirNames, _ in os.walk(rootDir, topdown=False):
+        for dirName in dirNames:
+            fullPath = os.path.join(dirPath, dirName)
+            try:
+                if not os.listdir(fullPath):
+                    emptyFolders.append(fullPath)
+            except FileNotFoundError:
+                continue
+
+    if not emptyFolders:
         print("No empty folders found.")
         return
 
     print("The following empty folders will be deleted:")
-    for d in deleted:
-        print("  -", d)
-    confirm = input("Are you sure you want to delete these folders? Type 'yes' to confirm: ")
-    if confirm.lower() == "yes":
-        for d in deleted:
-            os.rmdir(d)
-        print(f"Deleted {len(deleted)} empty folder(s).")
+    for folder in emptyFolders:
+        print(f"  - {folder}")
+
+    confirm = input("Are you sure you want to delete these folders? Type 'yes' to confirm: ").strip().lower()
+    if confirm == "yes":
+        deletedCount = 0
+        for folder in emptyFolders:
+            try:
+                os.rmdir(folder)
+                deletedCount += 1
+            except OSError:
+                print(f"Failed to delete: {folder}")
+        print(f"Deleted {deletedCount} empty folder(s).")
     else:
         print("Operation cancelled. No folders were deleted.")
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Remove all empty folders in the specified directory tree, with confirmation.")
-    parser.add_argument("directory", nargs="?", default=".", help="Root directory (default: current directory)")
+def main():
+    parser = argparse.ArgumentParser(description="Delete all empty folders in the specified directory tree, with confirmation.")
+    parser.add_argument("directory", nargs="?", default=".", help="Root directory to search (default: current directory)")
     args = parser.parse_args()
-    delete_empty_folders(args.directory)
+    deleteEmptyFolders(args.directory)
+
+if __name__ == "__main__":
+    main()
